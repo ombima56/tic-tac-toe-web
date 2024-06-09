@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <style>
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 5px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            border: 1px solid black;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="board" id="board"></div>
+    <script>
+        function renderBoard(board) {
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+            board.forEach((row, rowIndex) => {
+                row.forEach((cell, colIndex) => {
+                    const cellElement = document.createElement('div');
+                    cellElement.className = 'cell';
+                    cellElement.textContent = cell; // Ensure empty cells are displayed as empty
+                    cellElement.addEventListener('click', () => {
+                        fetch('/move', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ row: rowIndex, col: colIndex })
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                alert('Invalid move. Please try again.');
+                                throw new Error('Invalid move');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            renderBoard(data.board);
+                            if (data.winner) {
+                                alert(data.winner + ' wins!');
+                            } else if (data.draw) {
+                                alert("It's a draw!");
+                            }
+                        })
+                        .catch(error => console.error(error));
+                    });
+                    boardElement.appendChild(cellElement);
+                });
+            });
+        }
+
+        // Initialize the board on page load
+        fetch('/move', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ row: -1, col: -1 }) // Dummy move to get the initial board
+        })
+        .then(response => response.json())
+        .then(data => {
+            renderBoard(data.board);
+        });
+    </script>
+</body>
+</html>
